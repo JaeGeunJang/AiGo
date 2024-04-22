@@ -1,8 +1,8 @@
 import torch
 import sys
 
-if str(sys.version)[:6] == '3.11.5' :
-    print("CHECK PYTHON VERSION: 3.11.5")
+if str(sys.version)[:4] == '3.10' :
+    print(f"CHECK PYTHON VERSION: {str(sys.version)[:7]}")
 else :
     print("CHECK PYTHON VERSION: SOMETHING DIFFERENT.")
 
