@@ -1,6 +1,6 @@
 # 기보 파일 저장 V
 # 수 순서 저장.  V
-# AI용 legal moving 적용 (최대 4칸까지)
+# AI용 legal moving 적용 (최대 4칸까지) 
 # 3X3, 4X4, 장목 금수 적용
 # 입력은 따로 받지 않음
 
@@ -25,7 +25,7 @@ class Board:
                 if self.check_samsam(x, y) and self.check_sasa(x, y) and self.check_sixmok(x, y):
                     return True
             # 백색일 경우 렌주룰 적용 X (금수 없음)
-            else :
+            if player == 2:
                 return True
         
         # 위 조건을 만족하지 못 할 경우 패스
@@ -75,6 +75,22 @@ class Board:
 
     def check_sixmok(self, x, y):
         return True
+    
+    # 탐색 영역 좁히기 넣어야 하나 고민.
+    def ai_valid_move(self, player):
+        legal_move = list()
+
+        for y in range(self.size):
+            for x in range(self.size):
+                if self.board[y][x] == 0:
+                    if player == 1:
+                        if self.check_samsam(x, y) and self.check_sasa(x, y) and self.check_sixmok(x, y):
+                            legal_move.append([x,y])
+                    if player == 2:
+                        legal_move.append([x, y])
+        return legal_move
+
+
 
 
 

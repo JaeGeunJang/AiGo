@@ -47,12 +47,12 @@ class ResNet(nn.Module):
         self.policy_conv = nn.Conv2d(self.in_channels, self.policy_num, kernel_size=1, stride=1, padding=1, bias = False)
         self.policy_bn = nn.BatchNorm2d(self.policy_num)
         self.policy_relu = nn.ReLU()
-        self.policy_linear = nn.Linear((self.policy_num+num_classes)**2*self.policy_num, self.classes)  # 수정된 부분
+        self.policy_linear = nn.Linear((num_classes+2)**2*self.policy_num, self.classes)  # 수정된 부분
 
         # Value Block
         self.value_conv = nn.Conv2d(self.in_channels, 1, kernel_size=1, stride=1, padding = 1, bias=False)
         self.value_bn1 = nn.BatchNorm2d(1)
-        self.value_linear = nn.Linear((self.policy_num+num_classes)**2, 1)  # 수정된 부분
+        self.value_linear = nn.Linear((num_classes+2)**2, 1)  # 수정된 부분
         self.value_relu = nn.ReLU()
         self.value_output = nn.Tanh()
 
