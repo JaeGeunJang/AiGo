@@ -1,7 +1,7 @@
-# 기보 파일 저장
-# 수 순서 저장.
+# 기보 파일 저장 V
+# 수 순서 저장.  V
 # AI용 legal moving 적용 (최대 4칸까지)
-# 3X3, 4X4 금지
+# 3X3, 4X4, 장목 금수 적용
 # 입력은 따로 받지 않음
 
 class Board:
@@ -31,6 +31,7 @@ class Board:
         # 위 조건을 만족하지 못 할 경우 패스
         return False
     
+    # 돌 놓는 위치
     def place_stone(self, x, y):
         if self.turn_num == 1:
             self.board[self.size//2][self.size//2] = self.player
@@ -48,17 +49,32 @@ class Board:
         
         return False
     
-    def check_winner(self):
-        pass
+    def check_winner(self, x, y, player):
+        directions = [(1, 0), (0, 1), (1, 1), (-1, 1)]
+    
+        for dx, dy in directions:
+            count = 0
+            for n in range(-4, 5):
+                nx, ny = x + dx*n, y + dy*n
+                if 0 <= nx < self.size and 0 <= ny < self.size:
+                    if self.board[ny][nx] == player:
+                        count += 1
+                        if count == 5 :
+                            return True
+                    else :
+                        count = 0
+                else :
+                    break
+        return False
 
-    def check_samsam(self):
-        pass
+    def check_samsam(self, x, y):
+        return True
 
-    def check_sasa(self):
-        pass
+    def check_sasa(self, x, y):
+        return True
 
-    def check_sixmok(self):
-        pass
+    def check_sixmok(self, x, y):
+        return True
 
 
 
