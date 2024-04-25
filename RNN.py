@@ -25,7 +25,7 @@ class ResidualBlock(nn.Module):
         return out
     
 class ResNet(nn.Module):
-    def __init__(self, block, num_blocks=20, num_classes=15):
+    def __init__(self, block, inital_channel = 7, num_blocks=20, num_classes=15):
         super(ResNet, self).__init__()
         self.in_channels = 256
         self.value_num = 256
@@ -33,7 +33,7 @@ class ResNet(nn.Module):
         self.classes = num_classes**2
 
         #initial block
-        self.conv1 = nn.Conv2d(1, self.in_channels, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(inital_channel, self.in_channels, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(self.in_channels)
         self.relu = nn.ReLU()
 
