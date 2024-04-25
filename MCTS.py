@@ -21,5 +21,5 @@ class MCTSNode:
         self.visits += 1
         self.wins += result
 
-    def UCB(self, mean_value, parents, child, explore = 2**0.5):
-        return mean_value + explore * math.sqrt()
+    def UCB(self, mean_value, percentage, parents, child, explore = 2**0.5):
+        return mean_value + explore * percentage * (parents**0.5) / (1+child)
