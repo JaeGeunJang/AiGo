@@ -1,8 +1,8 @@
-# 기보 파일 저장 V
-# 수 순서 저장.  V
-# AI용 legal moving 적용 (최대 4칸까지) 
+# 기보 파일 저장           V
+# 수 순서 저장             V
+# AI용 legal moving 적용   V 
 # 3X3, 4X4, 장목 금수 적용
-# 입력은 따로 받지 않음
+# 입력은 따로 받지 않음     V
 
 class Board:
     def __init__(self, size=15):
@@ -76,7 +76,7 @@ class Board:
     def check_sixmok(self, x, y):
         return True
     
-    # 탐색 영역 좁히기 넣어야 하나 고민.
+    # 탐색 영역 좁히기 넣지 않음. 결정
     def ai_valid_move(self, player):
         legal_move = list()
 
