@@ -67,6 +67,7 @@ class Board:
                     break
         return False
 
+    # 금수 설정 (추후 작성 필요)
     def check_samsam(self, x, y):
         return True
 
@@ -76,6 +77,7 @@ class Board:
     def check_sixmok(self, x, y):
         return True
     
+    # 신경망에서 legal move 받을 시 생성되는 리스트 
     def ai_valid_move(self, player):
         legal_move = list()
 
@@ -84,9 +86,9 @@ class Board:
                 if self.board[y][x] == 0:
                     if player == 1:
                         if self.check_samsam(x, y) and self.check_sasa(x, y) and self.check_sixmok(x, y):
-                            legal_move.append([x,y])
+                            legal_move.append((x,y))
                     if player == 2:
-                        legal_move.append([x, y])
+                        legal_move.append((x, y))
         return legal_move
 
 
