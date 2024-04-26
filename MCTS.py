@@ -24,10 +24,14 @@ class MCTSNode:
     def UCB(self, mean_value, percentage, parents, child, explore = 2**0.5):
         return mean_value + explore * percentage * (parents**0.5) / (1+child)
 
-# 각 트리들은 수가 선택 된 이후 다음 스텝에도 사용되기 때문에 남아 있어야함.
-# 머리 아프네... 
-# Parents Node에 Dictionary 형식 저장 후 선택되면 나머지 삭제
-# N(s, a), Q(s, a), 
+'''
+각 트리들은 수가 선택 된 이후 다음 스텝에도 사용되기 때문에 남아 있어야함.
+머리 아프네... 
+Parents Node에 Dictionary 형식 저장 후 선택되면 나머지 삭제
+N(s, a), Q(s, a), Temperator, Prior 필요
+MCTS 코드 내에서 직접 RNN을 시행하지는 않도록 작성
+'''
+
 class Node:
     def __init__(self):
         self.parents = None
