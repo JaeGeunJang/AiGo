@@ -33,6 +33,19 @@ MCTS 코드 내에서 직접 RNN을 시행하지는 않도록 작성
 '''
 
 class Node:
-    def __init__(self):
-        self.parents = None
-        self.child = None
+    def __init__(self, prior):
+        self.visited = 0
+        self.prior = prior
+        self.value_sum = 0
+        self.children = {}
+        
+
+class MCTS:
+    def __init__(self, state, network, temperator, simulation, C):
+        self.state = state
+        self.networks = network
+        self.temperator = temperator
+        self.simulations = simulation
+        self.prob_c = C
+    
+    
