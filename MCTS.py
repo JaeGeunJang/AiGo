@@ -47,6 +47,7 @@ class Node:
 class MCTS:
     def __init__(self, state, network, temperator, simulation, C):
         self.state = state # 현재 MCTS를 진행할 board
+        self.size = state.size
         self.network = network # 예측 및 훈련에 사용할 Neural Network
         self.temperator = temperator # Temperator (랜덤 선택 시)
         self.simulations = simulation # 시뮬레이션 횟수
@@ -70,14 +71,16 @@ class MCTS:
             parent = search_path[-2]
             network_output = self.networks.predict(current_state)
             prob, value = network_output[0], network_output[1]
-            actions, policy = prob #actions의 좌표 변경을 x, y로 변경 필요
+            actions, policy = [(i // self.size, i % self.size) for i in range(len(prob))], prob #action : (x, y), prob = prob list
             mask = torch.tensor([self.state.is_valid_move(x, y, root.player) for x, y in actions]) # 탐색 가능한 좌표만 수집
-            policy = torch.softmax(policy[mask], dim = 0)
+
+            policy = torch.tensor(policy)[mask]
+            max_policy, max_action = torch.max(policy, dim=0) # 가장 높은 policy와 그 좌표를 가져와줌.
 
             # 새로운 노드 생성, 상대 플레이어의 좌표 탐색
-            node = Node(policy) # 위에서 계산된 policy로 새 노드 생성
+            node = Node(max_policy) # 위에서 계산된 policy로 새 노드 생성
             node.player = 3 - node.player # 플레이어 변경
-            parent.children[action] = node # 여기 액션이 뭐엿지
+            parent.children[max_action] = node # 여기 액션이 뭐엿지
             search_path.append(node) # 새로운 노드를 경로에 추가
 
             # 경로탐색 완료 후 역전파를 이용해서 가치 재계산
