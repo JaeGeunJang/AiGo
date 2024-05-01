@@ -16,6 +16,21 @@ class Board:
         self.player = 1 # 1 : black, 2 : white
 
         self.board = [[0 for _ in range(size)] for _ in range(size)]
+    
+    def clone(self):
+        # 새 Board 객체 생성
+        clone_board = Board(size=self.size)
+        # 2차원 리스트의 깊은 복사
+        clone_board.board = [row[:] for row in self.board]  
+        # 기보 기록 복사 (CNN 구조 생성 시 필요)
+        clone_board.gibo = self.gibo[:]  
+        # 턴 번호 복사
+        clone_board.turn_num = self.turn_num  
+        # 현재 플레이어 복사
+        clone_board.player = self.player  
+        
+        return clone_board
+
 
     def is_valid_move(self, x, y, player):
         # 돌 위치가 정당한지 확인
@@ -90,10 +105,3 @@ class Board:
                     if player == 2:
                         legal_move.append((x, y))
         return legal_move
-
-
-
-
-
-    
-
