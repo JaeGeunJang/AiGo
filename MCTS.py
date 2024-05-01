@@ -47,61 +47,14 @@ class MCTS:
         self.temperator = temperator
         self.simulations = simulation
         self.prob_c = C
+        self.player = 0
     
-    def run(self, state, to_play):
+    def run(self, state, player):
         root = Node(0)
-        root.to_play = to_play
-        for _ in range(self.args.num_simulations):
+        root.player = player
+
+        for _ in range(self.simulations):
             node = root
             search_path = [node]
             current_state = state.clone()
-
-            while node.children:
-                action, node = self.select_child(node)
-                current_state.step(action)
-                search_path.append(node)
-
-            parent = search_path[-2]
-            network_output = self.network.predict(current_state)
-            action_probs, value = network_output["policy_logits"], network_output["value"]
-            actions, policy = zip(*action_probs.items())
-            mask = torch.tensor([self.game.is_valid_action(a) for a in actions])
-            policy = torch.softmax(policy[mask], dim=0)
-
-            node = Node(policy)
-            node.to_play = -parent.to_play
-            parent.children[action] = node
-            search_path.append(node)
-
-            self.backpropagate(search_path, value, to_play)
-
-        return self.select_action(root, temperature=self.args.temperature)
-
-    def select_child(self, node):
-        _, action, child = max((self.ucb_score(node, child), action, child) for action, child in node.children.items())
-        return action, child
-
-    def ucb_score(self, parent, child):
-        pb_c = np.log((parent.visit_count + self.args.pb_c_base + 1) / self.args.pb_c_base) + self.args.pb_c_init
-        pb_c *= np.sqrt(parent.visit_count) / (child.visit_count + 1)
-
-        prior_score = pb_c * child.prior
-        value_score = child.value()
-        return prior_score + value_score
-
-    def backpropagate(self, search_path, value, to_play):
-        for node in search_path[::-1]:
-            node.value_sum += value if node.to_play == to_play else -value
-            node.visit_count += 1
-            value = -value
-
-    def select_action(self, node, temperature):
-        visit_counts = [(child.visit_count, action) for action, child in node.children.items()]
-        actions, counts = zip(*visit_counts)
-        if temperature == 0:
-            action = actions[np.argmax(counts)]
-        else:
-            counts = np.array(counts)**(1/temperature)
-            probs = counts / np.sum(counts)
-            action = np.random.choice(actions, p=probs)
-        return action
+            
