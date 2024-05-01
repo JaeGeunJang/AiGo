@@ -1,5 +1,6 @@
 import random, math
 import numpy as np
+import torch
 
 '''
 # 기본적인 MCTS 구조. 변형 필요
@@ -66,10 +67,22 @@ class MCTS:
                 current_state.place_stone(action)
                 search_path.append(node)
         
-        parent = search_path[-2]
-        network_output = self.networks.predict(current_state)
-        prob, value = network_output[0], network_output[1]
-        
+            parent = search_path[-2]
+            network_output = self.networks.predict(current_state)
+            prob, value = network_output[0], network_output[1]
+            actions, policy = prob #actions의 좌표 변경을 x, y로 변경 필요
+            mask = torch.tensor([self.state.is_valid_move(x, y, root.player) for x, y in actions]) # 탐색 가능한 좌표만 수집
+            policy = torch.softmax(policy[mask], dim = 0)
+
+            # 새로운 노드 생성, 상대 플레이어의 좌표 탐색
+            node = Node(policy) # 위에서 계산된 policy로 새 노드 생성
+            node.player = 3 - node.player # 플레이어 변경
+            parent.children[action] = node # 여기 액션이 뭐엿지
+            search_path.append(node) # 새로운 노드를 경로에 추가
+
+            # 경로탐색 완료 후 역전파를 이용해서 가치 재계산
+            self.backpropagate(root, value, player)
+        return self.select_action(root, temperator = self.temperator)
 
     
     def UCB1(self):
@@ -83,7 +96,7 @@ class MCTS:
         pass
 
     # 시뮬레이션 이후 최종 선택 하는 방법?
-    def select_action(self, node):
+    def select_action(self, node, temperator):
         if self.temperator == 0:
             action = action
         else:
