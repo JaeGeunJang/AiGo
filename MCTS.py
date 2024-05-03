@@ -37,26 +37,28 @@ MCTS 코드 내에서 직접 RNN을 시행하지는 않도록 작성
 # Player는 1(흑)과 2(백)으로 설정되어 있음.
 class Node:
     def __init__(self, prior):
-        self.visited = 0
+        self.visit_count = 0
         self.player = 0
         self.prior = prior
         self.value_sum = 0
         self.children = {}
+        self.state = None
 
 # Player는 1(흑)과 2(백)으로 설정되어 있음.
 class MCTS:
-    def __init__(self, state, network, temperator, simulation, C):
-        self.state = state # 현재 MCTS를 진행할 board
+    def __init__(self, player, state, network, temperator, simulation, C):
+        self.state = state  # 현재 MCTS를 진행할 board
         self.size = state.size
-        self.network = network # 예측 및 훈련에 사용할 Neural Network
-        self.temperator = temperator # Temperator (랜덤 선택 시)
-        self.simulations = simulation # 시뮬레이션 횟수
-        self.prob_c = C # 밸런스 조정 상수
-        self.player = 0 # 현재 플레이어
-    
+        self.network = network  # 예측 및 훈련에 사용할 Neural Network
+        self.temperator = temperator  # Temperator (랜덤 선택 시)
+        self.simulations = simulation  # 시뮬레이션 횟수
+        self.prob_c = C  # 밸런스 조정 상수
+        self.player = player  # 현재 플레이어
+
     def run(self, state, player):
-        root = Node(0) # 현재 상태의 기본 노드 설정
-        root.player = player # 현재 상태의 플레이어
+        root = Node(0)  # 현재 상태의 기본 노드 설정
+        root.player = player  # 현재 상태의 플레이어
+        root.state = state.clone()
 
         for _ in range(self.simulations):
             node = root
@@ -67,43 +69,76 @@ class MCTS:
                 action, node = self.select_child(node)
                 current_state.place_stone(action)
                 search_path.append(node)
-        
+
             parent = search_path[-2]
-            network_output = self.networks.predict(current_state)
+            network_output = self.network.predict(current_state)
             prob, value = network_output[0], network_output[1]
-            actions, policy = [(i // self.size, i % self.size) for i in range(len(prob))], prob #action : (x, y), prob = prob list
-            mask = torch.tensor([self.state.is_valid_move(x, y, root.player) for x, y in actions]) # 탐색 가능한 좌표만 수집
+            actions = [(i // self.size, i % self.size) for i in range(len(prob))]
+            policy = prob
 
-            policy = torch.tensor(policy)[mask]
-            max_policy, max_action = torch.max(policy, dim=0) # 가장 높은 policy와 그 좌표를 가져와줌.
+            valid_actions = [action for action in actions if current_state.is_valid_move(action[0], action[1], player)]
+            policy = torch.tensor([policy[actions.index(action)] for action in valid_actions])
 
-            # 새로운 노드 생성, 상대 플레이어의 좌표 탐색
-            node = Node(max_policy) # 위에서 계산된 policy로 새 노드 생성
-            node.player = 3 - node.player # 플레이어 변경
-            parent.children[max_action] = node # 여기 액션이 뭐엿지
-            search_path.append(node) # 새로운 노드를 경로에 추가
+            for valid_action in valid_actions:
+                if valid_action not in parent.children:
+                    child_node = Node(policy[valid_actions.index(valid_action)])
+                    child_node.player = 3 - player
+                    child_node.state = current_state.clone()
+                    child_node.state.place_stone(valid_action)
+                    parent.children[valid_action] = child_node
 
-            # 경로탐색 완료 후 역전파를 이용해서 가치 재계산
-            self.backpropagate(root, value, player)
-        return self.select_action(root, temperator = self.temperator)
+            value = self.simulate(current_state, player)
+            self.backpropagate(search_path, value, player)
 
-    
-    def UCB1(self):
-        pass
+        return self.select_action(root, temperator=self.temperator)
 
-    def backpropagate(self):
-        pass
+    def select_child(self, node):
+        total_visits = sum(child.visit_count for child in node.children.values())
+        best_score = -1
+        best_action = None
+        best_child = None
 
-    # 시뮬레이션에서 차일드 선택 하는 방법?
-    def select_child(self):
-        pass
+        for action, child in node.children.items():
+            score = self.UCB1(total_visits, child.visit_count, child.prior)
+            if score > best_score:
+                best_score = score
+                best_action = action
+                best_child = child
 
-    # 시뮬레이션 이후 최종 선택 하는 방법?
-    def select_action(self, node, temperator):
-        if self.temperator == 0:
-            action = action
+        return best_action, best_child
+
+    def UCB1(self, total_visits, child_visits, prior):
+        return prior + np.sqrt(2 * np.log(total_visits) / (child_visits + 1))
+
+    def simulate(self, state, player):
+        while not state.is_game_over():
+            valid_actions = state.get_valid_moves(player)
+            if not valid_actions:
+                player = 3 - player
+                valid_actions = state.get_valid_moves(player)
+            action = np.random.choice(valid_actions)
+            state.place_stone(action)
+            player = 3 - player
+
+        winner = state.get_winner()
+        if winner == 0:
+            return 0
         else:
-            counts = np.array(counts)**(1/self.temperator)
-            probs = counts / np.sum(counts)
-            action = np.random.choice(actions, p = probs)
-            
+            return 1 if winner == player else -1
+
+    def backpropagate(self, search_path, value, player):
+        for node in reversed(search_path):
+            node.visit_count += 1
+            node.value_sum += value if node.player == player else -value
+            value = -value
+
+    def select_action(self, root, temperator):
+        visit_counts = np.array([child.visit_count for child in root.children.values()])
+        if temperator == 0:
+            best_child = root.children[max(root.children, key=lambda action: root.children[action].visit_count)]
+            return best_child.state.get_last_action()
+        else:
+            visit_counts = visit_counts ** (1 / temperator)
+            visit_probs = visit_counts / visit_counts.sum()
+            action_idx = np.random.choice(len(visit_probs), p=visit_probs)
+            return list(root.children.keys())[action_idx]
