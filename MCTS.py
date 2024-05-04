@@ -58,19 +58,24 @@ class MCTS:
     def run(self, state, player):
         root = Node(0)  # 현재 상태의 기본 노드 설정
         root.player = player  # 현재 상태의 플레이어
-        root.state = state.clone()
+        root.state = state.clone() # Root state 복사 
 
         for _ in range(self.simulations):
-            node = root
-            search_path = [node]
-            current_state = state.clone()
+            node = root 
+            search_path = [node] # 루트 노드를 첫 노드로 추가
+            current_state = state.clone() # 
 
             while node.children:
                 action, node = self.select_child(node)
                 current_state.place_stone(action)
                 search_path.append(node)
 
-            parent = search_path[-2]
+            # parent 노드 찾기
+            if len(search_path) > 1:
+                parent = search_path[-2]
+            else:
+                parent = search_path[-1]  # 루트 노드인 경우
+
             network_output = self.network.predict(current_state)
             prob, value = network_output[0], network_output[1]
             actions = [(i // self.size, i % self.size) for i in range(len(prob))]
