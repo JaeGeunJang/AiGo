@@ -116,7 +116,7 @@ class MCTS:
         return prior + np.sqrt(2 * np.log(total_visits) / (child_visits + 1))
 
     def simulate(self, state, player):
-        while not state.is_game_over(): # 게임 오버가 되지 않는 동안, 시뮬레이션 실행
+        while state.get_winner() == 0: # 게임 오버가 되지 않는 동안, 시뮬레이션 실행
             valid_actions = state.get_valid_moves(player) # 해당 플레이어가 놓을 수 있는 액션 리스트 정리
             if not valid_actions:
                 player = 3 - player # 플레이어 교체
@@ -128,7 +128,7 @@ class MCTS:
         
         # 게임이 끝날 경우
         winner = state.get_winner() # 승자의 정보 저장
-        if winner == 0: #무승부라면, 0 반환
+        if winner == -1: #무승부라면, 0 반환
             return 0
         else: # 승자가 나라면 1, 아니라면 -1 (패배) 리턴
             return 1 if winner == player else -1

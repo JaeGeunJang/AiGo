@@ -55,7 +55,7 @@ class Board:
             self.turn_num += 1
             return True
 
-        if self.is_valid_move(x, y, self.player):
+        elif self.is_valid_move(x, y, self.player):
             self.board[y][x] = self.player
             self.gibo.append([y, x, self.player])
             self.player = 3 - self.player
@@ -64,7 +64,11 @@ class Board:
         
         return False
     
-    def check_winner(self, x, y, player):
+    def is_game_over(self, x, y):
+        if self.board[y][x] == 0 :
+            return False
+        player = self.board[y][x]
+
         directions = [(1, 0), (0, 1), (1, 1), (-1, 1)]
     
         for dx, dy in directions:
@@ -75,7 +79,7 @@ class Board:
                     if self.board[ny][nx] == player:
                         count += 1
                         if count == 5 :
-                            return True
+                            return player
                     else :
                         count = 0
                 else :
@@ -83,11 +87,15 @@ class Board:
         return False
 
     def get_winner(self):
+        # 무승부 조건 처리
+        if not any(0 in row for row in self.board):
+            return -1
+        
         for y in range(self.size):
             for x in range(self.size):
                 if self.board[y][x] != 0:
                     player = self.board[y][x]
-                    if self.check_winner(x, y, player):
+                    if self.is_game_over(x, y):
                         return player
         return 0
 
@@ -102,7 +110,7 @@ class Board:
         return True
     
     # 신경망에서 legal move 받을 시 생성되는 리스트 
-    def ai_valid_move(self, player):
+    def get_valid_moves(self, player):
         legal_move = list()
 
         for y in range(self.size):
