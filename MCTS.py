@@ -67,7 +67,8 @@ class MCTS:
 
             while node.children:
                 action, node = self.select_child(node) # 현재 상태에서의 node에서 가장 유망한 child 선택
-                current_state.place_stone(action) # action 선택 후 플레이
+                x, y = action
+                current_state.place_stone(x, y) # action 선택 후 플레이
                 search_path.append(node) # 선택된 node를 search path에 추가
 
             # parent 노드 찾기
@@ -83,6 +84,7 @@ class MCTS:
 
             for valid_action in valid_actions: # 가능한 액션들 중에서 선택 후 진행
                 if valid_action not in parent.children: #아직 시행하지 않은 시뮬레이션의 경우
+                    x, y = valid_action
                     child_node = Node(policy[valid_actions.index(valid_action)]) # 노드 추가
                     child_node.player = 3 - player # 플레이어 교체
                     child_node.state = current_state.clone() # state 복사
@@ -120,7 +122,8 @@ class MCTS:
                 player = 3 - player # 플레이어 교체
                 valid_actions = state.get_valid_moves(player) # 교체된 플레이어가 놓을 수 있는 액션 리스트 
             action = np.random.choice(valid_actions) # 랜덤하게 선택
-            state.place_stone(action) # 돌을 놓아본다
+            x, y = action
+            state.place_stone(x, y) # 돌을 놓아본다
             player = 3 - player # 플레이어 교체
         
         # 게임이 끝날 경우
@@ -140,9 +143,10 @@ class MCTS:
         visit_counts = np.array([child.visit_count for child in root.children.values()])
         if temperator == 0:
             best_child = root.children[max(root.children, key=lambda action: root.children[action].visit_count)]
-            return best_child.state.get_last_action()
+            return best_child.state.gibo[-1][:2]
         else:
             visit_counts = visit_counts ** (1 / temperator)
             visit_probs = visit_counts / visit_counts.sum()
             action_idx = np.random.choice(len(visit_probs), p=visit_probs)
+            # 수정: 선택된 action을 반환
             return list(root.children.keys())[action_idx]

@@ -55,7 +55,7 @@ class Board:
             self.turn_num += 1
             return True
 
-        if self.is_valid_move(self, x, y):
+        if self.is_valid_move(x, y, self.player):
             self.board[y][x] = self.player
             self.gibo.append([y, x, self.player])
             self.player = 3 - self.player
@@ -82,6 +82,15 @@ class Board:
                     break
         return False
 
+    def get_winner(self):
+        for y in range(self.size):
+            for x in range(self.size):
+                if self.board[y][x] != 0:
+                    player = self.board[y][x]
+                    if self.check_winner(x, y, player):
+                        return player
+        return 0
+
     # 금수 설정 (추후 작성 필요)
     def check_samsam(self, x, y):
         return True
@@ -101,7 +110,7 @@ class Board:
                 if self.board[y][x] == 0:
                     if player == 1:
                         if self.check_samsam(x, y) and self.check_sasa(x, y) and self.check_sixmok(x, y):
-                            legal_move.append((x,y))
+                            legal_move.append((x, y))
                     if player == 2:
                         legal_move.append((x, y))
         return legal_move
