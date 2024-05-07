@@ -57,7 +57,7 @@ class Board:
 
         elif self.is_valid_move(x, y, self.player):
             self.board[y][x] = self.player
-            self.gibo.append([y, x, self.player])
+            self.gibo.append([x, y, self.player])
             self.player = 3 - self.player
             self.turn_num += 1
             return True

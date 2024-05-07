@@ -26,6 +26,41 @@ class MCTS:
         self.prob_c = C  # 밸런스 조정 상수
         self.player = player  # 현재 플레이어
 
+    # CNN 학습을 위한 피쳐 생성
+    def make_feature(self, state):
+        current_state = state
+        size = state.size
+        current_player = state.player
+
+        feature_map = np.zeros((size, size, 17), dtype=np.float32)
+        tmp_state = [[0 for _ in range (size)] for _ in range(size)]
+
+        gibo = current_state.gibo
+        for g in gibo[:-8] :
+            x, y, player = g
+            tmp_state[y][x] = player
+        
+        tmp_gibo = gibo[-8:]
+
+        for i in range (8):
+            x, y, player = tmp_gibo[i]
+            tmp_state[y][x] = player
+
+            for y in range (size):
+                for x in range (size):
+                    if tmp_state[y][x] == current_player:
+                        feature_map[y][x][16-(i+1)*2] = 1
+                    elif tmp_state[y][x] == 3 - current_player:
+                        feature_map[y][x][17-(i+1)*2] = 1
+        
+        for i in range (size):
+            for j in range (size):
+                feature_map[i][j] = current_player
+        
+        return feature_map
+
+
+
     def run(self, state, player):
         root = Node(0)  # 현재 상태의 기본 노드 설정
         root.player = player  # 현재 상태의 플레이어
@@ -45,7 +80,9 @@ class MCTS:
             # parent 노드 찾기
             parent = search_path[-2]
 
-            network_output = self.network.predict(current_state) # current state를 이용하여 network를 통한 prob, value값 도출
+            current_feature = self.make_feature(current_state)
+
+            network_output = self.network.predict(current_feature) # current state를 이용하여 network를 통한 prob, value값 도출
             prob, value = network_output[0], network_output[1] 
             actions = [(i // self.size, i % self.size) for i in range(len(prob))]
             policy = prob
