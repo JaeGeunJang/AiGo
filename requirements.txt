@@ -4,4 +4,4 @@ CUDA 12.4
 torch CUDA 12.1
 
 Package
-numpy
+- numpy

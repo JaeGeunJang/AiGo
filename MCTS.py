@@ -106,9 +106,12 @@ class MCTS:
 
     def backpropagate(self, search_path, value, player):
         for node in reversed(search_path):
-            node.visit_count += 1 # 탐색 횟수 1회 증가 
-            node.value_sum += value if node.player == player else -value 
-            value = -value 
+            node.visit_count += 1
+            if node.player == player:
+                node.value_sum += value
+            else:
+                node.value_sum -= value
+            value = -value
 
     def select_action(self, root, temperator):
         visit_counts = np.array([child.visit_count for child in root.children.values()])
