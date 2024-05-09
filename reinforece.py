@@ -79,7 +79,7 @@ if __name__ == "__main__":
     board_size = 15
     num_simulations = 400
     temperature = 1.0
-    c_puct = 
+    c_puct = 2**0.5/2
 
     alphaomok = AlphaOmok(board_size, num_simulations, temperature, c_puct)
     alphaomok.train(num_iterations=10, num_episodes=10, num_steps=100)
