@@ -1,56 +1,85 @@
 import numpy as np
+import torch
+import torch.optim as optim
+from torch.utils.data import DataLoader
+from MCTS import MCTS
+from RNN import ResNet, ResidualBlock
+from Rule import Board
 
-# 알파고 제로의 강화학습 클래스 (클로드 예제 코드)
-class AlphaGoZero:
-    def __init__(self, game, neural_network, num_simulations, c_puct):
-        self.game = game
-        self.neural_network = neural_network
+class AlphaOmok:
+    def __init__(self, board_size, num_simulations, temperature, c_puct):
+        self.board_size = board_size
         self.num_simulations = num_simulations
+        self.temperature = temperature
         self.c_puct = c_puct
-        self.mcts = MCTS(game, neural_network, c_puct)
+        self.network = ResNet(ResidualBlock)
+        self.optimizer = optim.Adam(self.network.parameters(), lr=0.001)
 
-    def selfplay(self):
-        state = self.game.get_initial_state()
-        memory = []
+    def train(self, num_iterations, num_episodes, num_steps):
+        for i in range(num_iterations):
+            print(f"Iteration {i+1}/{num_iterations}")
+            self.self_play(num_episodes, num_steps)
+            self.train_network()
 
-        while not self.game.is_terminal_state(state):
-            self.mcts.search(state, self.num_simulations)
-            policy = self.mcts.get_policy(state)
-            memory.append((state, policy, None))
-            action = np.random.choice(len(policy), p=policy)
-            state = self.game.get_next_state(state, action)
+    def self_play(self, num_episodes, num_steps):
+        states, probs, values = [], [], []
+        for _ in range(num_episodes):
+            board = Board(size=self.board_size)
+            player = 1
+            episode_states, episode_probs, episode_values = [], [], []
+            for _ in range(num_steps):
+                mcts = MCTS(player, board, self.network, self.temperature, self.num_simulations, self.c_puct)
+                action = mcts.run(board, player)
+                board.place_stone(action[0], action[1])
 
-        value = self.game.get_reward(state)
-        for i in range(len(memory)):
-            state, policy, _ = memory[i]
-            memory[i] = (state, policy, value)
-            value = -value
+                state = board.clone()
+                episode_states.append(state)
+                episode_probs.append(mcts.action_probs(state))
+                episode_values.append(0)
+                winner = board.get_winner()
+                if winner != 0:
+                    break
 
-        return memory
+            # Update the values based on the game result
+            value = 1 if winner == player else -1
+            episode_values = [value * ((-1) ** (i % 2)) for i in range(len(episode_values))]
 
-    def train(self, memory):
-        states, policies, values = zip(*memory)
-        self.neural_network.train(states, policies, values)
+            states.extend(episode_states)
+            probs.extend(episode_probs)
+            values.extend(episode_values)
 
-# 강화학습 실행 함수
-def run_alpha_go_zero(game, neural_network, num_iterations, num_selfplay, num_simulations, c_puct):
-    alpha_go_zero = AlphaGoZero(game, neural_network, num_simulations, c_puct)
+        return states, probs, values
 
-    for i in range(num_iterations):
-        print(f"Iteration {i+1}")
-        memory = []
-        for _ in range(num_selfplay):
-            memory += alpha_go_zero.selfplay()
-        alpha_go_zero.train(memory)
+    def train_network(self):
+        states, probs, values = self.self_play(num_episodes=10, num_steps=100)
+        feature_maps = [state.make_feature(state) for state in states]
+        prob_tensors = [torch.tensor(prob).float() for prob in probs]
+        value_tensors = [torch.tensor(value).float() for value in values]
 
-    return alpha_go_zero
+        dataset = list(zip(feature_maps, prob_tensors, value_tensors))
+        dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 
-# 사용 예시
-game = GoGame()  # 바둑 게임 클래스 (규칙이 구현되어 있다고 가정)
-neural_network = NeuralNetwork()  # 뉴럴 네트워크 클래스 (구현되어 있다고 가정)
-num_iterations = 10
-num_selfplay = 100
-num_simulations = 200
-c_puct = 1.0
+        self.network.train()
+        for feature_map, prob, value in dataloader:
+            predicted_prob, predicted_value = self.network(feature_map)
+            prob_loss = torch.mean(torch.sum(-prob * torch.log(predicted_prob), dim=1))
+            value_loss = torch.mean((predicted_value - value) ** 2)
+            loss = prob_loss + value_loss
 
-trained_model = run_alpha_go_zero(game, neural_network, num_iterations, num_selfplay, num_simulations, c_puct)
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+
+    def play(self, board, player):
+        mcts = MCTS(player, board, self.network, temperature=0, simulation=self.num_simulations, C=self.c_puct)
+        action = mcts.run(board, player)
+        return action
+
+if __name__ == "__main__":
+    board_size = 15
+    num_simulations = 400
+    temperature = 1.0
+    c_puct = 
+
+    alphaomok = AlphaOmok(board_size, num_simulations, temperature, c_puct)
+    alphaomok.train(num_iterations=10, num_episodes=10, num_steps=100)
