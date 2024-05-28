@@ -52,7 +52,7 @@ class AlphaOmok:
 
     def train_network(self):
         states, probs, values = self.self_play(num_episodes=10, num_steps=100)
-        feature_maps = [state.make_feature(state) for state in states]
+        feature_maps = [self.make_feature(state) for state in states]
         prob_tensors = [torch.tensor(prob).float() for prob in probs]
         value_tensors = [torch.tensor(value).float() for value in values]
 
@@ -75,11 +75,43 @@ class AlphaOmok:
         action = mcts.run(board, player)
         return action
 
+    def make_feature(self, state):
+        current_state = state
+        size = state.size
+        current_player = state.player
+
+        feature_map = np.zeros((size, size, 17), dtype=np.float32)
+        tmp_state = [[0 for _ in range (size)] for _ in range(size)]
+
+        gibo = current_state.gibo
+        for g in gibo[:-8] :
+            x, y, player = g
+            tmp_state[y][x] = player
+        
+        tmp_gibo = gibo[-8:]
+
+        for i in range (8):
+            x, y, player = tmp_gibo[i]
+            tmp_state[y][x] = player
+
+            for y in range (size):
+                for x in range (size):
+                    if tmp_state[y][x] == current_player:
+                        feature_map[y][x][16-(i+1)*2] = 1
+                    elif tmp_state[y][x] == 3 - current_player:
+                        feature_map[y][x][17-(i+1)*2] = 1
+        
+        for i in range (size):
+            for j in range (size):
+                feature_map[i][j] = current_player
+        
+        return feature_map
+
 if __name__ == "__main__":
     board_size = 15
     num_simulations = 400
     temperature = 1.0
-    c_puct = 2**0.5/2
+    c_puct = 2**0.5 / 2
 
     alphaomok = AlphaOmok(board_size, num_simulations, temperature, c_puct)
     alphaomok.train(num_iterations=10, num_episodes=10, num_steps=100)

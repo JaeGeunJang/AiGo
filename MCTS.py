@@ -59,8 +59,6 @@ class MCTS:
         
         return feature_map
 
-
-
     def run(self, state, player):
         root = Node(0)  # 현재 상태의 기본 노드 설정
         root.player = player  # 현재 상태의 플레이어
@@ -78,6 +76,8 @@ class MCTS:
                 search_path.append(node) # 선택된 node를 search path에 추가
 
             # parent 노드 찾기
+            if len(search_path) < 2: #error 
+                raise ValueError("검색 경로가 너무 짧습니다. 자식 노드가 부족합니다.")
             parent = search_path[-2]
 
             current_feature = self.make_feature(current_state)
@@ -160,4 +160,5 @@ class MCTS:
             visit_probs = visit_counts / visit_counts.sum()
             action_idx = np.random.choice(len(visit_probs), p=visit_probs)
             # 수정: 선택된 action을 반환
+            return list(root.children.keys())[action_idx]
             return list(root.children.keys())[action_idx]
